@@ -4,6 +4,7 @@ import styles from './TaskSection.module.css';
 export const TaskSection = () => {
     const {
         tasks, isLoading, currentPage, paginationInfo, filter, newTask, editingState,
+        selectedTask, setSelectedTask, // Достали из хука
         setFilter, setCurrentPage, setNewTask, setEditingState,
         createTask, toggleTaskStatus, saveEdit, deleteTask
     } = useTasks();
@@ -12,6 +13,23 @@ export const TaskSection = () => {
         <section className={styles.section}>
             <h2 className={styles.titleLine}>Задачи</h2>
 
+            {/* Модальное окно (показывается только если есть selectedTask) */}
+            {selectedTask && (
+                <div className={styles.modalOverlay} onClick={() => setSelectedTask(null)}>
+                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                        <button className={styles.closeButton} onClick={() => setSelectedTask(null)}>&times;</button>
+                        <h3 className={styles.modalTitle}>{selectedTask.title}</h3>
+                        <p className={styles.modalDesc}>
+                            {selectedTask.description || "Описание отсутствует"}
+                        </p>
+                        <div style={{ marginTop: '20px', fontSize: '12px', color: '#ccc' }}>
+                            Статус: {selectedTask.isFinished ? 'Выполнена' : 'В работе'}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Форма создания и фильтры (код остается прежним) ... */}
             <form onSubmit={createTask} style={{ display: 'flex', gap: '12px', marginBottom: '25px' }}>
                 <input className={styles.input} style={{ flex: 2 }} placeholder="Название задачи" value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} />
                 <input className={styles.input} style={{ flex: 3 }} placeholder="Описание..." value={newTask.description} onChange={e => setNewTask(p => ({ ...p, description: e.target.value }))} />
@@ -20,13 +38,7 @@ export const TaskSection = () => {
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 {(['all', 'active', 'completed'] as const).map((f) => (
-                    <button
-                        key={f}
-                        onClick={() => { setFilter(f); setCurrentPage(0); }}
-                        className={`${styles.filterButton} ${filter === f ? styles.filterButtonActive : ''}`}
-                    >
-                        {f === 'all' ? 'Все' : f === 'active' ? 'Активные' : 'Выполненные'}
-                    </button>
+                    <button key={f} onClick={() => { setFilter(f); setCurrentPage(0); }} className={`${styles.filterButton} ${filter === f ? styles.filterButtonActive : ''}`}>{f === 'all' ? 'Все' : f === 'active' ? 'Активные' : 'Выполненные'}</button>
                 ))}
             </div>
 
@@ -47,7 +59,18 @@ export const TaskSection = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                     <input type="checkbox" checked={task.isFinished} style={{ cursor: 'pointer', width: '18px', height: '18px' }} onChange={() => toggleTaskStatus(task)} />
                                     <div>
-                                        <div style={{ fontWeight: '600', textDecoration: task.isFinished ? 'line-through' : 'none', color: task.isFinished ? '#adb5bd' : '#212529' }}>{task.title}</div>
+                                        {/* КЛИК ПО НАЗВАНИЮ ОТКРЫВАЕТ МОДАЛКУ */}
+                                        <div
+                                            className={styles.taskTitleLink}
+                                            onClick={() => setSelectedTask(task)}
+                                            style={{
+                                                fontWeight: '600',
+                                                textDecoration: task.isFinished ? 'line-through' : 'none',
+                                                color: task.isFinished ? '#adb5bd' : '#212529'
+                                            }}
+                                        >
+                                            {task.title}
+                                        </div>
                                         <div style={{ fontSize: '12px', color: '#6c757d' }}>{task.description}</div>
                                     </div>
                                 </div>
@@ -61,6 +84,7 @@ export const TaskSection = () => {
                 ))}
             </div>
 
+            {/* Пагинация (прежний код) ... */}
             {paginationInfo && paginationInfo.pages > 1 && (
                 <div className={styles.pagination}>
                     <button disabled={currentPage === 0} onClick={() => setCurrentPage(currentPage - 1)} className={styles.buttonSecondary}>←</button>
